@@ -1,7 +1,6 @@
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const express = require('express');
-const { json } = require('body-parser');
 const app = express();
 const PORT = 3000 ;
 const USERS_FILE = path.join(__dirname, "users.json");
@@ -49,18 +48,26 @@ app.post('/user' , async (req , res) => {
 app.patch('/user/:id' , async (req , res) => {
     const {id} = req.params;
     let users = await readUsers();
-    let updatedValues = req.body;
 
     const indexOfUser = users.findIndex( (user) => {
-        return Number(id) === user.id;
+        return Number(id) === Number(user.id);
     })
     if(indexOfUser === -1){
         return res.status(404).json({
             message: 'User ID not found.'
         });
     }
+    const allowedFields = ["name", "age", "email"];
+    const updatedValues = {};
+
+    for (const field of allowedFields) {
+        if (req.body[field] !== undefined) {
+            updatedValues[field] = req.body[field];
+        }
+    }
+
     const updatedFields = Object.keys(updatedValues);
-    Object.assign(users[indexOfUser] , updatedValues);
+    Object.assign(users[indexOfUser], updatedValues);
     await writeUsers(users);
     res.status(200).json({
         message: `User ${updatedFields.join(', ')} updated successfully.`
@@ -87,6 +94,22 @@ app.delete('/user/:id' , async (req , res) => {
     return res.status(200).json({
         message: 'User deleted successfully.'
     });
+})
+
+app.get('/user' , async(req , res) => {
+    const users = await readUsers();
+    return res.status(200).json(users);
+})
+
+app.get('/user/:id' , async(req , res) =>{
+    const users = await readUsers();
+    const {id} = req.params;
+
+    const indexOfUser = users.findIndex((user) => Number(user.id) === Number(id));
+    if(indexOfUser === -1){
+        return res.status(404).json({message : 'User not found.'});
+    }
+    return res.status(200).json(users[indexOfUser]);
 })
 
 app.listen(PORT , () => {
