@@ -96,9 +96,31 @@ app.delete('/user/:id' , async (req , res) => {
     });
 })
 
+app.get('/user/getByName' , async(req , res) =>{
+    const name = req.query.name ;
+    const users = await readUsers();
+
+    const result = users.filter((user) => (user.name).toLowerCase() === name.toLowerCase());
+    if(!result.length){
+        return res.status(404).json({message: 'User name not found.'})
+    }
+    return res.status(200).json(result)
+})
+
 app.get('/user' , async(req , res) => {
     const users = await readUsers();
     return res.status(200).json(users);
+})
+
+app.get('/user/filter' , async(req , res) => {
+    const minAge = req.query.minAge ;
+    const users = await readUsers();
+    const result = users.filter((user) => Number(user.age) >= Number(minAge));
+
+    if(!result.length){
+       return res.status(404).json({message: 'no user found.'});
+    }
+    return res.status(200).json(result);
 })
 
 app.get('/user/:id' , async(req , res) =>{
